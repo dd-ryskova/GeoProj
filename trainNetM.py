@@ -17,18 +17,19 @@ parser.add_argument('--data_num', type=int, default=50000, metavar='N')
 parser.add_argument('--batch_size', type=int, default=32, metavar='N')
 parser.add_argument("--dataset_dir", type=str, default='/home/xliea/GeoProj/Dataset/Dataset_256')
 parser.add_argument("--distortion_type", type=list, default=['barrel','pincushion','shear','rotation','projective','wave'])
+#parser.add_argument("--distortion_type", type=list, default=['barrel','shear','rotation','wave'])
 args = parser.parse_args()
 
 use_GPU = torch.cuda.is_available()
 
-train_loader = get_loader(distortedImgDir = '%s%s' % (args.dataset_dir, '/train/distorted'),
-                  flowDir       = '%s%s' % (args.dataset_dir, '/train/uv'), 
+train_loader = get_loader(distortedImgDir = '%s%s' % (args.dataset_dir, '/train_distorted'),
+                  flowDir       = '%s%s' % (args.dataset_dir, '/train_flow'), 
                   batch_size = args.batch_size,
                   distortion_type = args.distortion_type,
                   data_num = args.data_num)
 
-val_loader = get_loader(distortedImgDir = '%s%s' % (args.dataset_dir, '/test/distorted'),
-                flowDir        = '%s%s' % (args.dataset_dir, '/test/uv'), 
+val_loader = get_loader(distortedImgDir = '%s%s' % (args.dataset_dir, '/test_distorted'),
+                flowDir        = '%s%s' % (args.dataset_dir, '/test_flow'),
                 batch_size = args.batch_size,
                 distortion_type = args.distortion_type,
                 data_num = int(args.data_num*0.1) + 50000)
@@ -68,14 +69,16 @@ lr = args.lr
 optimizer = torch.optim.Adam(list(model_en.parameters()) + list(model_de.parameters()) + list(model_class.parameters()), lr=lr)
 
 step = 0
-logger = Logger('./logs')
+#logger = Logger('./logs')
 
 model_en.train()
 model_de.train()
 model_class.train()
 
 for epoch in range(args.epochs):
+    print(f'epoch {epoch}')
     for i, (disimgs, disx, disy, labels) in enumerate(train_loader):
+        print(f'enumerate {i}')
          
         if use_GPU:
             disimgs = disimgs.cuda()
@@ -104,14 +107,14 @@ for epoch in range(args.epochs):
         loss.backward()
         optimizer.step()
         
-        print("Epoch [%d], Iter [%d], Loss: %.4f, Loss1: %.4f, Loss2: %.4f" %(epoch + 1, i + 1, loss.data[0], loss1.data[0], loss2.data[0]))
+        print("Epoch [%d], Iter [%d], Loss: %.4f, Loss1: %.4f, Loss2: %.4f" %(epoch + 1, i + 1, loss.item(), loss1.item(), loss2.item()))
         
         #============ TensorBoard logging ============#
         step = step + 1
         #Log the scalar values
-        info = {'loss': loss.data[0]}
-        for tag, value in info.items():
-            logger.scalar_summary(tag, value, step)
+        info = {'loss': loss.item()}
+        #for tag, value in info.items():
+            #logger.scalar_summary(tag, value, step)
             
     torch.save(model_en.state_dict(), '%s%s%s' % ('model_en_',epoch + 1,'.pkl')) 
     torch.save(model_de.state_dict(), '%s%s%s' % ('model_de_',epoch + 1,'.pkl')) 
@@ -151,8 +154,8 @@ for i, (disimgs, disx, disy, labels) in enumerate(val_loader):
 
     loss = loss1 + loss2
 
-    total = total + loss.data[0]
-    print(loss.data[0], loss1.data[0], loss2.data[0])
+    total = total + loss.item()
+    print(loss.item(), loss1.item(), loss2.item())
     
 print('val loss',total/(i+1))
 

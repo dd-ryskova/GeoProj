@@ -39,7 +39,12 @@ class DistortionDataset(data.Dataset):
         distorted_image_path = self.distorted_image_paths[index]
         displacement_path = self.displacement_paths[index]
         
-        distorted_image =skimage.io.imread(distorted_image_path)
+        distorted_image = skimage.io.imread(distorted_image_path)
+
+        from PIL import Image
+        distorted_image = Image.fromarray(distorted_image)
+        print(distorted_image.size)
+
         displacement = spio.loadmat(displacement_path)
 
         displacement_x = displacement['u'].astype(np.float32)
@@ -60,14 +65,17 @@ class DistortionDataset(data.Dataset):
             label = 3
         elif (label_type == 'projective'):
             label = 4
-        elif (label_type == 'randomnew'):
+        elif (label_type == 'wave'):
             label = 5
 
         if self.transform is not None:
             trans_distorted_image = self.transform(distorted_image)
+            print('use transform')
         else:
             trans_distorted_image = distorted_image
-   
+            print('not use transform')
+    
+        print(trans_distorted_image.size(), " ", type(trans_distorted_image))
         return trans_distorted_image, displacement_x, displacement_y, label
 
     def __len__(self):
@@ -78,7 +86,8 @@ class DistortionDataset(data.Dataset):
 def get_loader(distortedImgDir, flowDir, batch_size, distortion_type, data_num):
     """Builds and returns Dataloader."""
     
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    transform = transforms.Compose([transforms.Resize((256, 256)), transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+    #transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((1, 1, 1), (1, 1, 1))])
     dataset = DistortionDataset(distortedImgDir, flowDir, transform, distortion_type, data_num)
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     

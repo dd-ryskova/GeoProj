@@ -39,9 +39,9 @@ def generatedata(types, k, trainFlag):
     
     print(types,trainFlag,k)
     
-    width  = 512
-    height = 512
-
+    width  = 256
+    height = 256
+    
     parameters = distortion_model.distortionParameter(types)
     
     OriImg = io.imread('%s%s%s%s' % (args.sourcedir, '/', str(k).zfill(6), '.jpg'))
@@ -90,12 +90,12 @@ def generatedata(types, k, trainFlag):
     if trainFlag == True:
         saveImgPath =  '%s%s%s%s%s%s' % (trainDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
         saveMatPath =  '%s%s%s%s%s%s' % (trainUvPath, '/',types,'_', str(k).zfill(6), '.mat')
-        io.imsave(saveImgPath, cropImg)
+        io.imsave(saveImgPath, disImg)
         scio.savemat(saveMatPath, {'u': crop_u,'v': crop_v})  
     else:
         saveImgPath =  '%s%s%s%s%s%s' % (testDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
         saveMatPath =  '%s%s%s%s%s%s' % (testUvPath, '/',types,'_', str(k).zfill(6), '.mat')
-        io.imsave(saveImgPath, cropImg)
+        io.imsave(saveImgPath, disImg)
         scio.savemat(saveMatPath, {'u': crop_u,'v': crop_v})   
         
 def generatepindata(types, k, trainFlag):
@@ -108,8 +108,8 @@ def generatepindata(types, k, trainFlag):
     parameters = distortion_model.distortionParameter(types)
     
     OriImg = io.imread('%s%s%s%s' % (args.sourcedir, '/', str(k).zfill(6), '.jpg'))
-    temImg = rescale(OriImg, 0.5, mode='reflect')
-    ScaImg = skimage.img_as_ubyte(temImg)
+    #temImg = rescale(OriImg, 0.5, mode='reflect')
+    ScaImg = skimage.img_as_ubyte(OriImg)
     
     padImg = np.array(np.zeros((ScaImg.shape[0] + 1,ScaImg.shape[1] + 1, 3)), dtype = np.uint8)
     padImg[0:height, 0:width, :] = ScaImg[0:height, 0:width, :]

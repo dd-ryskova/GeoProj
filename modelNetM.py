@@ -194,7 +194,8 @@ class ClassNet(nn.Module):
         self.conv2 = nn.Conv2d(512, 512, kernel_size=3, stride=2, padding=1)
         self.bn2 = nn.BatchNorm2d(512)
         
-        self.fc = nn.Linear(512 * 4 * 4, 6) 
+        self.fc = nn.Linear(512 * 4 * 4, 6)
+        #self.fc = nn.Linear(512 * 2 * 2, 6) 
                        
     def forward(self, x):
         
