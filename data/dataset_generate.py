@@ -50,9 +50,9 @@ def generatedata(types, k, trainFlag):
     u = np.array(np.zeros((OriImg.shape[0],OriImg.shape[1])), dtype = np.float32)
     v = np.array(np.zeros((OriImg.shape[0],OriImg.shape[1])), dtype = np.float32)
     
-    cropImg = np.array(np.zeros((int(height/2),int(width/2),3)), dtype = np.uint8)
-    crop_u  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
-    crop_v  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
+    # cropImg = np.array(np.zeros((int(height/2),int(width/2),3)), dtype = np.uint8)
+    # crop_u  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
+    # crop_v  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
     
     # crop range
     xmin = int(width*1/4)
@@ -82,21 +82,21 @@ def generatedata(types, k, trainFlag):
                                  Q22*(xu - int(xu))*(yu - int(yu))
 
                             
-                if(xmin <= i <= xmax) and (ymin <= j <= ymax):
-                    cropImg[j - ymin, i - xmin, :] = disImg[j,i,:]
-                    crop_u[j - ymin, i - xmin] = u[j,i]
-                    crop_v[j - ymin, i - xmin] = v[j,i]
+                # if(xmin <= i <= xmax) and (ymin <= j <= ymax):
+                #     cropImg[j - ymin, i - xmin, :] = disImg[j,i,:]
+                #     crop_u[j - ymin, i - xmin] = u[j,i]
+                #     crop_v[j - ymin, i - xmin] = v[j,i]
                     
     if trainFlag == True:
         saveImgPath =  '%s%s%s%s%s%s' % (trainDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
         saveMatPath =  '%s%s%s%s%s%s' % (trainUvPath, '/',types,'_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': crop_u,'v': crop_v})  
+        scio.savemat(saveMatPath, {'u': u,'v': v})  
     else:
         saveImgPath =  '%s%s%s%s%s%s' % (testDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
         saveMatPath =  '%s%s%s%s%s%s' % (testUvPath, '/',types,'_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': crop_u,'v': crop_v})   
+        scio.savemat(saveMatPath, {'u': u,'v': v}) 
         
 def generatepindata(types, k, trainFlag):
     

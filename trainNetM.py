@@ -17,6 +17,7 @@ parser.add_argument('--data_num', type=int, default=50000, metavar='N')
 parser.add_argument('--batch_size', type=int, default=32, metavar='N')
 parser.add_argument("--dataset_dir", type=str, default='/home/xliea/GeoProj/Dataset/Dataset_256')
 parser.add_argument("--distortion_type", type=list, default=['barrel','pincushion','shear','rotation','projective','wave'])
+#parser.add_argument("--distortion_type", type=list, default=['pincushion', 'projective'])
 #parser.add_argument("--distortion_type", type=list, default=['barrel','shear','rotation','wave'])
 args = parser.parse_args()
 
@@ -75,50 +76,53 @@ model_en.train()
 model_de.train()
 model_class.train()
 
-for epoch in range(args.epochs):
-    print(f'epoch {epoch}')
-    for i, (disimgs, disx, disy, labels) in enumerate(train_loader):
-        print(f'enumerate {i}')
-         
-        if use_GPU:
-            disimgs = disimgs.cuda()
-            disx = disx.cuda()
-            disy = disy.cuda()
-            labels = labels.cuda()
-        
-        disimgs = Variable(disimgs)
-        labels_x = Variable(disx)
-        labels_y = Variable(disy)
-        labels_clas = Variable(labels)
-        flow_truth = torch.cat([labels_x, labels_y], dim=1)
-        
-        # Forward + Backward + Optimize
-        optimizer.zero_grad()
-        
-        middle = model_en(disimgs)
-        flow_output = model_de(middle)
-        clas = model_class(middle)
-        
-        loss1 = criterion(flow_output, flow_truth)
-        loss2 = criterion_clas(clas, labels_clas)*reg
-       
-        loss = loss1 + loss2
+with open('loss_log.csv', 'a') as log_file:
+    log_file.write('epoch,loss,loss1,loss2\n')
+    for epoch in range(args.epochs):
+        #print(f'epoch {epoch}')
+        for i, (disimgs, disx, disy, labels) in enumerate(train_loader):
+            #print(f'enumerate {i}')
             
-        loss.backward()
-        optimizer.step()
-        
-        print("Epoch [%d], Iter [%d], Loss: %.4f, Loss1: %.4f, Loss2: %.4f" %(epoch + 1, i + 1, loss.item(), loss1.item(), loss2.item()))
-        
-        #============ TensorBoard logging ============#
-        step = step + 1
-        #Log the scalar values
-        info = {'loss': loss.item()}
-        #for tag, value in info.items():
-            #logger.scalar_summary(tag, value, step)
+            if use_GPU:
+                disimgs = disimgs.cuda()
+                disx = disx.cuda()
+                disy = disy.cuda()
+                labels = labels.cuda()
             
-    torch.save(model_en.state_dict(), '%s%s%s' % ('model_en_',epoch + 1,'.pkl')) 
-    torch.save(model_de.state_dict(), '%s%s%s' % ('model_de_',epoch + 1,'.pkl')) 
-    torch.save(model_class.state_dict(), '%s%s%s' % ('model_class_',epoch + 1,'.pkl')) 
+            disimgs = Variable(disimgs)
+            labels_x = Variable(disx)
+            labels_y = Variable(disy)
+            labels_clas = Variable(labels)
+            flow_truth = torch.cat([labels_x, labels_y], dim=1)
+            
+            # Forward + Backward + Optimize
+            optimizer.zero_grad()
+            
+            middle = model_en(disimgs)
+            flow_output = model_de(middle)
+            clas = model_class(middle)
+            
+            loss1 = criterion(flow_output, flow_truth)
+            loss2 = criterion_clas(clas, labels_clas)*reg
+        
+            loss = loss1 + loss2
+                
+            loss.backward()
+            optimizer.step()
+            
+            print("Epoch [%d], Iter [%d], Loss: %.4f, Loss1: %.4f, Loss2: %.4f" %(epoch + 1, i + 1, loss.item(), loss1.item(), loss2.item()))
+            log_file.write(f'{epoch},{loss.item()},{loss1.item()},{loss2.item()}\n')
+            
+            #============ TensorBoard logging ============#
+            step = step + 1
+            #Log the scalar values
+            info = {'loss': loss.item()}
+            #for tag, value in info.items():
+                #logger.scalar_summary(tag, value, step)
+                
+        torch.save(model_en.state_dict(), '%s%s%s' % ('model_en_',epoch + 1,'.pkl')) 
+        torch.save(model_de.state_dict(), '%s%s%s' % ('model_de_',epoch + 1,'.pkl')) 
+        torch.save(model_class.state_dict(), '%s%s%s' % ('model_class_',epoch + 1,'.pkl')) 
             
 torch.save(model_en.state_dict(), 'model_en_last.pkl') 
 torch.save(model_de.state_dict(), 'model_de_last.pkl') 

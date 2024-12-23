@@ -2,7 +2,7 @@ from scipy.io import loadmat
 import numpy as np
 import matplotlib.pyplot as plt
 
-mat_data = loadmat("D:\\FVT34U\\Something\\Darya\\flow\\barrel_000000.mat")
+mat_data = loadmat("D:\\FVT34U\\Something\\Darya\\distorted_images_2\\test_flow\\projective_003500.mat")
 
 print(mat_data.keys())
 

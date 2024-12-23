@@ -43,7 +43,7 @@ class DistortionDataset(data.Dataset):
 
         from PIL import Image
         distorted_image = Image.fromarray(distorted_image)
-        print(distorted_image.size)
+        #print(distorted_image.size)
 
         displacement = spio.loadmat(displacement_path)
 
@@ -70,12 +70,12 @@ class DistortionDataset(data.Dataset):
 
         if self.transform is not None:
             trans_distorted_image = self.transform(distorted_image)
-            print('use transform')
+            #print('use transform')
         else:
             trans_distorted_image = distorted_image
-            print('not use transform')
+            #print('not use transform')
     
-        print(trans_distorted_image.size(), " ", type(trans_distorted_image))
+        #print(trans_distorted_image.size(), " ", type(trans_distorted_image))
         return trans_distorted_image, displacement_x, displacement_y, label
 
     def __len__(self):
