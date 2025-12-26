@@ -1,11 +1,13 @@
 import math
 import numpy as np
+import random
+import cv2
 
 def distortionParameter(types):
     parameters = []
     
-    if (types == 'barrel'):
-        Lambda = np.random.random_sample( )* -5e-5/4
+    if types == 'barrel':
+        Lambda = np.random.random_sample() * -5e-5 / 4
         x0 = 256
         y0 = 256
         parameters.append(Lambda)
@@ -13,8 +15,8 @@ def distortionParameter(types):
         parameters.append(y0)
         return parameters
     
-    elif (types == 'pincushion'):
-        Lambda = np.random.random_sample() * 8.6e-5/4
+    elif types == 'pincushion':
+        Lambda = np.random.random_sample() * 8.6e-5 / 4
         x0 = 128
         y0 = 128
         parameters.append(Lambda)
@@ -22,24 +24,23 @@ def distortionParameter(types):
         parameters.append(y0)
         return parameters
     
-    elif (types == 'rotation'):
+    elif types == 'rotation':
         theta = np.random.random_sample() * 30 - 15   
-        radian = math.pi*theta/180
+        radian = math.pi * theta / 180
         sina = math.sin(radian)
         cosa = math.cos(radian)
         parameters.append(sina)
         parameters.append(cosa)
         return parameters
     
-    elif (types == 'shear'):
+    elif types == 'shear':
         shear = np.random.random_sample() * 0.8 - 0.4
         parameters.append(shear)
         return parameters
 
-    elif (types == 'projective'):
-    
+    elif types == 'projective':
         x1 = 0
-        x4 = np.random.random_sample()* 0.1 + 0.1
+        x4 = np.random.random_sample() * 0.1 + 0.1
 
         x2 = 1 - x1
         x3 = 1 - x4
@@ -49,15 +50,15 @@ def distortionParameter(types):
         y2 = y1
         y3 = y4
 
-        a31 = ((x1-x2+x3-x4)*(y4-y3) - (y1-y2+y3-y4)*(x4-x3))/((x2-x3)*(y4-y3)-(x4-x3)*(y2-y3))
-        a32 = ((y1-y2+y3-y4)*(x2-x3) - (x1-x2+x3-x4)*(y2-y3))/((x2-x3)*(y4-y3)-(x4-x3)*(y2-y3))
+        a31 = ((x1 - x2 + x3 - x4) * (y4 - y3) - (y1 - y2 + y3 - y4) * (x4 - x3)) / ((x2 - x3) * (y4 - y3) - (x4 - x3) * (y2 - y3))
+        a32 = ((y1 - y2 + y3 - y4) * (x2 - x3) - (x1 - x2 + x3 - x4) * (y2 - y3)) / ((x2 - x3) * (y4 - y3) - (x4 - x3) * (y2 - y3))
 
-        a11 = x2 - x1 + a31*x2
-        a12 = x4 - x1 + a32*x4
+        a11 = x2 - x1 + a31 * x2
+        a12 = x4 - x1 + a32 * x4
         a13 = x1
 
-        a21 = y2 - y1 + a31*y2
-        a22 = y4 - y1 + a32*y4
+        a21 = y2 - y1 + a31 * y2
+        a22 = y4 - y1 + a32 * y4
         a23 = y1
        
         parameters.append(a11)
@@ -70,41 +71,57 @@ def distortionParameter(types):
         parameters.append(a32)
         return parameters
     
-    elif (types == 'wave'):
+    elif types == 'wave':
         mag = np.random.random_sample() * 32
         parameters.append(mag)
         return parameters
 
+    elif types == 'combined':  # Новый тип искажения
+        # Параметры для каждого типа искажения
+        translation_params = [random.randint(-30, 30), random.randint(-30, 30)]  # tx, ty
+        rotation_angle = random.uniform(-30, 30)  # Угол поворота
+        perspective_params = [
+            [random.randint(0, 64), random.randint(0, 64)],
+            [random.randint(192, 256), random.randint(0, 64)],
+            [random.randint(0, 64), random.randint(192, 256)],
+            [random.randint(192, 256), random.randint(192, 256)]
+        ]  # Точки для перспективного искажения
+        radial_params = [random.uniform(-0.3, 0.3), random.uniform(-0.2, 0.2)]  # k1, k2
+
+        parameters.append(translation_params)
+        parameters.append(rotation_angle)
+        parameters.append(perspective_params)
+        parameters.append(radial_params)
+        return parameters
 
 def distortionModel(types, xd, yd, W, H, parameter):
-    
-    if (types == 'barrel' or types == 'pincushion'):
+    if types == 'barrel' or types == 'pincushion':
         Lambda = parameter[0]
-        x0    = parameter[1]
-        y0    = parameter[2]
+        x0 = parameter[1]
+        y0 = parameter[2]
         coeff = 1 + Lambda * ((xd - x0)**2 + (yd - y0)**2)
-        if (coeff == 0):
+        if coeff == 0:
             xu = W
             yu = H
         else:
-            xu = (xd - x0)/coeff + x0
-            yu = (yd - y0)/coeff + y0
+            xu = (xd - x0) / coeff + x0
+            yu = (yd - y0) / coeff + y0
         return xu, yu
     
-    elif (types == 'rotation'):
-        sina  = parameter[0]
-        cosa  = parameter[1]
-        xu =  cosa*xd + sina*yd + (1 - sina - cosa)*W/2
-        yu = -sina*xd + cosa*yd + (1 + sina - cosa)*H/2
+    elif types == 'rotation':
+        sina = parameter[0]
+        cosa = parameter[1]
+        xu = cosa * xd + sina * yd + (1 - sina - cosa) * W / 2
+        yu = -sina * xd + cosa * yd + (1 + sina - cosa) * H / 2
         return xu, yu
     
-    elif (types == 'shear'):
+    elif types == 'shear':
         shear = parameter[0]
-        xu =  xd + shear*yd - shear*W/2
-        yu =  yd 
+        xu = xd + shear * yd - shear * W / 2
+        yu = yd 
         return xu, yu
     
-    elif (types == 'projective'):
+    elif types == 'projective':
         a11 = parameter[0]
         a12 = parameter[1]
         a13 = parameter[2]
@@ -113,16 +130,55 @@ def distortionModel(types, xd, yd, W, H, parameter):
         a23 = parameter[5]
         a31 = parameter[6]
         a32 = parameter[7]
-        im = xd/(W - 1.0)
-        jm = yd/(H - 1.0)
-        xu = (W - 1.0) *(a11*im + a12*jm +a13)/(a31*im + a32*jm + 1)
-        yu = (H - 1.0)*(a21*im + a22*jm +a23)/(a31*im + a32*jm + 1)
+        im = xd / (W - 1.0)
+        jm = yd / (H - 1.0)
+        xu = (W - 1.0) * (a11 * im + a12 * jm + a13) / (a31 * im + a32 * jm + 1)
+        yu = (H - 1.0) * (a21 * im + a22 * jm + a23) / (a31 * im + a32 * jm + 1)
         return xu, yu
     
-    elif (types == 'wave'):
+    elif types == 'wave':
         mag = parameter[0]
         yu = yd
-        xu = xd + mag*math.sin(math.pi*4*yd/W)
+        xu = xd + mag * math.sin(math.pi * 4 * yd / W)
         return xu, yu
+    
+    elif types == 'combined':  # Новый тип искажения
+        # Применяем все искажения последовательно
+        tx, ty = parameter[0]  # Сдвиг
+        angle = parameter[1]  # Угол поворота
+        perspective_pts = parameter[2]  # Точки для перспективного искажения
+        k1, k2 = parameter[3]  # Параметры радиального искажения
+
+        # Сдвиг
+        xu = xd + tx
+        yu = yd + ty
+
+        # Поворот
+        radian = math.pi * angle / 180
+        sina = math.sin(radian)
+        cosa = math.cos(radian)
+        xu = cosa * (xu - W / 2) + sina * (yu - H / 2) + W / 2
+        yu = -sina * (xu - W / 2) + cosa * (yu - H / 2) + H / 2
+
+        # Перспективное искажение
+        src_pts = np.float32([[0, 0], [W - 1, 0], [0, H - 1], [W - 1, H - 1]])
+        dst_pts = np.float32(perspective_pts)
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        pts = np.float32([[xu, yu]]).reshape(-1, 1, 2)
+        transformed_pts = cv2.perspectiveTransform(pts, M)
+        xu, yu = transformed_pts[0][0]
+
+        # Радиальное искажение
+        x = (xu - W / 2) / (W / 2)
+        y = (yu - H / 2) / (H / 2)
+        r2 = x**2 + y**2
+        x_distorted = x * (1 + k1 * r2 + k2 * r2**2)
+        y_distorted = y * (1 + k1 * r2 + k2 * r2**2)
+        xu = x_distorted * (W / 2) + W / 2
+        yu = y_distorted * (H / 2) + H / 2
+
+
+        return xu, yu
+
         
         

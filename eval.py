@@ -54,14 +54,15 @@ testImgPath = imgs_path
 saveFlowPath = flow_path
 
 correct = 0
-for index, types in enumerate(['barrel','pincushion','rotation','shear','projective','wave']):
+for index, types in enumerate(['combined']):
 #for index, types in enumerate(['barrel', 'rotation', 'shear', 'wave']):
-    for k in range(0, 1):
+    for k in range(0, 4):
 
         imgPath = '%s%s%s%s%s%s' % (testImgPath, '\\', types, '_', str(k).zfill(6), '.jpg')
         disimgs = PIL.Image.open(imgPath).convert('RGB')
-        #img_npy = np.asarray(disimgs.resize((128, 128))) # your resolution
-        img_npy = np.asarray(disimgs)
+        original_res = disimgs.size
+        img_npy = np.asarray(disimgs.resize((256, 256))) # your resolution
+        #img_npy = np.asarray(disimgs)
         disimgs = transform(disimgs)
         
         use_GPU = torch.cuda.is_available()
@@ -85,8 +86,8 @@ for index, types in enumerate(['barrel','pincushion','rotation','shear','project
         from resample.resampling import rectification
         res_img, re_mask = rectification(img_npy, flow_output.data.cpu().numpy()[0])
         img_out = PIL.Image.fromarray(res_img)
-        #img_out = img_out.resize((128, 128)) # your resolution
-        img_out.save(f'imgs/result_{types}.png')
+        img_out = img_out.resize(original_res) # your resolution
+        img_out.save(f'imgs/result_{types}_{k}.png')
 
         saveMatPath =  '%s%s%s%s%s%s' % (saveFlowPath, '/', types, '_', str(k).zfill(6), '.mat')
         scio.savemat(saveMatPath, {'u': u,'v': v})

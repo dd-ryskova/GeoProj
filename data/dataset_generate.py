@@ -13,6 +13,8 @@ parser.add_argument("--sourcedir", type=str, default='/home/xliea/GeoProj/Datase
 parser.add_argument("--datasetdir", type=str, default='/home/xliea/GeoProj/Dataset/Dataset_256_gen')
 parser.add_argument("--trainnum", type=int, default=50000, help='number of the training set')
 parser.add_argument("--testnum", type=int, default=5000, help='number of the test set')
+parser.add_argument("--starttrain", type=int, default=0, help='if have any imgs in dir yet, enter last index')
+parser.add_argument("--starttest", type=int, default=0, help='if have any imgs in dir yet, enter last index')
 args = parser.parse_args()
 
 if not os.path.exists(args.datasetdir):
@@ -37,7 +39,7 @@ if not os.path.exists(testUvPath):
     
 def generatedata(types, k, trainFlag):
     
-    print(types,trainFlag,k)
+    print(types, trainFlag, k)
     
     width  = 256
     height = 256
@@ -46,19 +48,19 @@ def generatedata(types, k, trainFlag):
     
     OriImg = io.imread('%s%s%s%s' % (args.sourcedir, '/', str(k).zfill(6), '.jpg'))
 
-    disImg = np.array(np.zeros(OriImg.shape), dtype = np.uint8)
-    u = np.array(np.zeros((OriImg.shape[0],OriImg.shape[1])), dtype = np.float32)
-    v = np.array(np.zeros((OriImg.shape[0],OriImg.shape[1])), dtype = np.float32)
+    disImg = np.array(np.zeros(OriImg.shape), dtype=np.uint8)
+    u = np.array(np.zeros((OriImg.shape[0], OriImg.shape[1])), dtype=np.float32)
+    v = np.array(np.zeros((OriImg.shape[0], OriImg.shape[1])), dtype=np.float32)
     
-    # cropImg = np.array(np.zeros((int(height/2),int(width/2),3)), dtype = np.uint8)
-    # crop_u  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
-    # crop_v  = np.array(np.zeros((int(height/2),int(width/2))), dtype = np.float32)
+    # cropImg = np.array(np.zeros((int(height/2),int(width/2),3)), dtype=np.uint8)
+    # crop_u  = np.array(np.zeros((int(height/2),int(width/2))), dtype=np.float32)
+    # crop_v  = np.array(np.zeros((int(height/2),int(width/2))), dtype=np.float32)
     
     # crop range
-    xmin = int(width*1/4)
-    xmax = int(width*3/4 - 1)
-    ymin = int(height*1/4)
-    ymax = int(height*3/4 - 1)
+    xmin = int(width * 1 / 4)
+    xmax = int(width * 3 / 4 - 1)
+    ymin = int(height * 1 / 4)
+    ymax = int(height * 3 / 4 - 1)
 
     for i in range(width):
         for j in range(height):
@@ -76,10 +78,10 @@ def generatedata(types, k, trainFlag):
                 Q21 = OriImg[int(yu) + 1, int(xu), :]
                 Q22 = OriImg[int(yu) + 1, int(xu) + 1, :]
                 
-                disImg[j,i,:] = Q11*(int(xu) + 1 - xu)*(int(yu) + 1 - yu) + \
-                                 Q12*(xu - int(xu))*(int(yu) + 1 - yu) + \
-                                 Q21*(int(xu) + 1 - xu)*(yu - int(yu)) + \
-                                 Q22*(xu - int(xu))*(yu - int(yu))
+                disImg[j, i, :] = Q11 * (int(xu) + 1 - xu) * (int(yu) + 1 - yu) + \
+                                 Q12 * (xu - int(xu)) * (int(yu) + 1 - yu) + \
+                                 Q21 * (int(xu) + 1 - xu) * (yu - int(yu)) + \
+                                 Q22 * (xu - int(xu)) * (yu - int(yu))
 
                             
                 # if(xmin <= i <= xmax) and (ymin <= j <= ymax):
@@ -88,19 +90,20 @@ def generatedata(types, k, trainFlag):
                 #     crop_v[j - ymin, i - xmin] = v[j,i]
                     
     if trainFlag == True:
-        saveImgPath =  '%s%s%s%s%s%s' % (trainDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
-        saveMatPath =  '%s%s%s%s%s%s' % (trainUvPath, '/',types,'_', str(k).zfill(6), '.mat')
+        saveImgPath = '%s%s%s%s%s%s' % (trainDisPath, '/', types, '_', str(k).zfill(6), '.jpg')
+        saveMatPath = '%s%s%s%s%s%s' % (trainUvPath, '/', types, '_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': u,'v': v})  
+        scio.savemat(saveMatPath, {'u': u, 'v': v})  
     else:
-        saveImgPath =  '%s%s%s%s%s%s' % (testDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
-        saveMatPath =  '%s%s%s%s%s%s' % (testUvPath, '/',types,'_', str(k).zfill(6), '.mat')
+        saveImgPath = '%s%s%s%s%s%s' % (testDisPath, '/', types, '_', str(k).zfill(6), '.jpg')
+        saveMatPath = '%s%s%s%s%s%s' % (testUvPath, '/', types, '_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': u,'v': v}) 
+        scio.savemat(saveMatPath, {'u': u, 'v': v})
+
         
 def generatepindata(types, k, trainFlag):
     
-    print(types,trainFlag,k)
+    print(types, trainFlag, k)
     
     width  = 256
     height = 256
@@ -111,15 +114,15 @@ def generatepindata(types, k, trainFlag):
     #temImg = rescale(OriImg, 0.5, mode='reflect')
     ScaImg = skimage.img_as_ubyte(OriImg)
     
-    padImg = np.array(np.zeros((ScaImg.shape[0] + 1,ScaImg.shape[1] + 1, 3)), dtype = np.uint8)
+    padImg = np.array(np.zeros((ScaImg.shape[0] + 1, ScaImg.shape[1] + 1, 3)), dtype=np.uint8)
     padImg[0:height, 0:width, :] = ScaImg[0:height, 0:width, :]
     padImg[height, 0:width, :] = ScaImg[height - 1, 0:width, :]
     padImg[0:height, width, :] = ScaImg[0:height, width - 1, :]
     padImg[height, width, :] = ScaImg[height - 1, width - 1, :]
 
-    disImg = np.array(np.zeros(ScaImg.shape), dtype = np.uint8)
-    u = np.array(np.zeros((ScaImg.shape[0],ScaImg.shape[1])), dtype = np.float32)
-    v = np.array(np.zeros((ScaImg.shape[0],ScaImg.shape[1])), dtype = np.float32)
+    disImg = np.array(np.zeros(ScaImg.shape), dtype=np.uint8)
+    u = np.array(np.zeros((ScaImg.shape[0], ScaImg.shape[1])), dtype=np.float32)
+    v = np.array(np.zeros((ScaImg.shape[0], ScaImg.shape[1])), dtype=np.float32)
 
     for i in range(width):
         for j in range(height):
@@ -137,33 +140,36 @@ def generatepindata(types, k, trainFlag):
                 Q21 = padImg[int(yu) + 1, int(xu), :]
                 Q22 = padImg[int(yu) + 1, int(xu) + 1, :]
                 
-                disImg[j,i,:] = Q11*(int(xu) + 1 - xu)*(int(yu) + 1 - yu) + \
-                                 Q12*(xu - int(xu))*(int(yu) + 1 - yu) + \
-                                 Q21*(int(xu) + 1 - xu)*(yu - int(yu)) + \
-                                 Q22*(xu - int(xu))*(yu - int(yu))
+                disImg[j, i, :] = Q11 * (int(xu) + 1 - xu) * (int(yu) + 1 - yu) + \
+                                 Q12 * (xu - int(xu)) * (int(yu) + 1 - yu) + \
+                                 Q21 * (int(xu) + 1 - xu) * (yu - int(yu)) + \
+                                 Q22 * (xu - int(xu)) * (yu - int(yu))
     
     if trainFlag == True:
-        saveImgPath =  '%s%s%s%s%s%s' % (trainDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
-        saveMatPath =  '%s%s%s%s%s%s' % (trainUvPath, '/',types,'_', str(k).zfill(6), '.mat')
+        saveImgPath = '%s%s%s%s%s%s' % (trainDisPath, '/', types, '_', str(k).zfill(6), '.jpg')
+        saveMatPath = '%s%s%s%s%s%s' % (trainUvPath, '/', types, '_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': u,'v': v})  
+        scio.savemat(saveMatPath, {'u': u, 'v': v})  
     else:
-        saveImgPath =  '%s%s%s%s%s%s' % (testDisPath, '/',types,'_', str(k).zfill(6), '.jpg')
-        saveMatPath =  '%s%s%s%s%s%s' % (testUvPath, '/',types,'_', str(k).zfill(6), '.mat')
+        saveImgPath = '%s%s%s%s%s%s' % (testDisPath, '/', types, '_', str(k).zfill(6), '.jpg')
+        saveMatPath = '%s%s%s%s%s%s' % (testUvPath, '/', types, '_', str(k).zfill(6), '.mat')
         io.imsave(saveImgPath, disImg)
-        scio.savemat(saveMatPath, {'u': u,'v': v}) 
+        scio.savemat(saveMatPath, {'u': u, 'v': v}) 
         
         
-for types in ['barrel','rotation','shear','wave']: 
-    for k in range(args.trainnum):
-        generatedata(types, k, trainFlag = True)
+# Основной цикл
+#for types in ['barrel', 'rotation', 'shear', 'wave', 'combined']:
+for types in ['combined']:  # Добавлен 'combined'
+    for k in range(args.starttrain, args.starttrain + args.trainnum):
+        generatedata(types, k, trainFlag=True)
 
-    for k in range(args.trainnum, args.trainnum + args.testnum):
-        generatedata(types, k, trainFlag = False)
+    for k in range(args.starttest, args.starttest + args.testnum):
+        generatedata(types, k, trainFlag=False)
         
-for types in ['pincushion','projective']: 
-    for k in range(args.trainnum):
-        generatepindata(types, k, trainFlag = True)
+# for types in ['pincushion', 'projective']: 
+#     for k in range(args.trainnum):
+#         generatepindata(types, k, trainFlag=True)
 
-    for k in range(args.trainnum, args.trainnum + args.testnum):
-        generatepindata(types, k, trainFlag = False)
+#     for k in range(args.trainnum, args.trainnum + args.testnum):
+#         generatepindata(types, k, trainFlag=False)
+
